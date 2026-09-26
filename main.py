@@ -1,15 +1,12 @@
 import asyncio
 import os
-import shutil
-import time
 
 import yt_dlp
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pytgcalls import PyTgCalls
 from pytgcalls import filters as call_filters
-from pytgcalls.types import ChatUpdate, MediaStream, StreamEnded
-from pytgcalls.types import AudioQuality, VideoQuality
+from pytgcalls.types import AudioQuality, ChatUpdate, MediaStream, StreamEnded, VideoQuality
 
 import config
 
@@ -30,12 +27,13 @@ assistant = Client(
     in_memory=True,
 )
 
+# PyTgCalls stores the current event loop when it is constructed.
+# Keep this same loop for the complete application lifetime.
+app_loop = asyncio.get_event_loop()
 calls = PyTgCalls(assistant)
 
 current_file = None
-current_title = None
 download_lock = asyncio.Lock()
-progress_tasks = {}
 
 
 def allowed(message):
@@ -95,19 +93,13 @@ async def update_progress(message, state):
 
 def ytdlp_hook(state):
     def hook(data):
-        status = data.get("status")
-        if status == "downloading":
+        if data.get("status") == "downloading":
             total = data.get("total_bytes") or data.get("total_bytes_estimate") or 0
             downloaded = data.get("downloaded_bytes") or 0
             state["total"] = total
             state["downloaded"] = downloaded
             state["speed"] = data.get("speed") or 0
-            state["percent"] = (
-                int(downloaded * 100 / total) if total else 0
-            )
-        elif status == "finished":
-            state["percent"] = 100
-            state["done"] = True
+            state["percent"] = int(downloaded * 100 / total) if total else 0
     return hook
 
 
@@ -126,15 +118,9 @@ async def download_video(url, progress_message):
 
     def download():
         options = {
-            "format": (
-                "bestvideo[height<=720]+bestaudio/"
-                "best[height<=720]/best"
-            ),
+            "format": "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
             "merge_output_format": "mp4",
-            "outtmpl": os.path.join(
-                config.DOWNLOAD_DIR,
-                "%(id)s.%(ext)s",
-            ),
+            "outtmpl": os.path.join(config.DOWNLOAD_DIR, "%(id)s.%(ext)s"),
             "noplaylist": True,
             "quiet": True,
             "no_warnings": True,
@@ -150,17 +136,21 @@ async def download_video(url, progress_message):
                 if os.path.exists(merged):
                     filename = merged
 
-            title = info.get("title") or "Video"
-            return filename, title
+            return filename, info.get("title") or "Video"
 
     try:
         filename, title = await asyncio.to_thread(download)
+
+        # Only stop the progress task after yt-dlp and any FFmpeg merge/post-processing
+        # have completely returned.
         state["done"] = True
         state["percent"] = 100
         await task
 
-        if not os.path.exists(filename):
-            raise FileNotFoundError("yt-dlp finished but the output file was not found.")
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(
+                "yt-dlp finished but the output file was not found."
+            )
 
         await progress_message.edit_text(
             f"✅ <b>Downloaded</b>\n<code>{title}</code>\n\n"
@@ -177,6 +167,8 @@ async def download_video(url, progress_message):
 async def play_file(path):
     global current_file
 
+    old_file = current_file
+
     stream = MediaStream(
         path,
         AudioQuality.HIGH,
@@ -185,6 +177,13 @@ async def play_file(path):
 
     await calls.play(config.CHAT_ID, stream)
     current_file = path
+
+    # The new stream is active, so the previous local file is no longer needed.
+    if old_file and old_file != path and os.path.isfile(old_file):
+        try:
+            os.remove(old_file)
+        except OSError:
+            pass
 
 
 async def cleanup_file():
@@ -233,16 +232,13 @@ async def play_command(_, message):
 
     async with download_lock:
         status = await message.reply_text(
-            "⬇️ <b>Preparing video...</b>\n<code>░░░░░░░░░░░░░░</code> 0%"
+            "⬇️ <b>Preparing video...</b>\n"
+            "<code>░░░░░░░░░░░░░░</code> 0%"
         )
 
         try:
             filename, title = await download_video(url, status)
-
             await play_file(filename)
-
-            global current_title
-            current_title = title
 
             await status.edit_text(
                 "▶️ <b>Now playing</b>\n"
@@ -299,7 +295,7 @@ async def stream_ended(_, update: StreamEnded):
     await cleanup_file()
 
 
-async def start_client(client, name):
+async def start_client(client):
     while True:
         try:
             await client.start()
@@ -311,22 +307,20 @@ async def start_client(client, name):
 async def main():
     os.makedirs(config.DOWNLOAD_DIR, exist_ok=True)
 
-    await start_client(bot, "bot")
-    await start_client(assistant, "assistant")
+    await start_client(bot)
+    await start_client(assistant)
 
     calls.start()
 
     me = await assistant.get_me()
-    print(f"Assistant: @{me.username or me.id}")
+    print(f"Assistant: @{me.username or me.id}", flush=True)
+    print("WatchParty started.", flush=True)
+    print("Commands: /join /play /pause /leave", flush=True)
 
-    print("WatchParty started.")
-    print("Commands: /join /play /pause /leave")
-
-    await idle()
-
-    await assistant.stop()
-    await bot.stop()
+    # Keep the same event loop alive. Pyrogram's legacy sync idle helper is
+    # intentionally avoided because this application already owns the loop.
+    await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    app_loop.run_until_complete(main())
