@@ -1,7 +1,6 @@
-# Use a maintained Pyrogram release with MTProto time-sync fixes.
 pyrogram==2.0.106
-# Keep the legacy PyTgCalls API used by this streaming-only bot.
-py-tgcalls==0.8.6
+py-tgcalls==2.2.11
+ntgcalls
 tgcrypto
 yt-dlp
 python-dotenv
