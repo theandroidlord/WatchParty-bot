@@ -42,6 +42,8 @@ async def main():
 
     # PyTgCalls starts the user client; only query the user session after it is ready.
     await group_call.start()
+    # Register PyTgCalls event handlers only after group_call has been created.
+    import userplugins.group_call  # noqa: F401
     Config.USER_ID = (await USER.get_me()).id
 
     if not await startup_check():
