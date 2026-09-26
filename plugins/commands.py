@@ -4,24 +4,24 @@ from utils import chat_filter, queue_text
 
 HELP = """<b>WatchParty Streaming Bot</b>
 
-<b>Playback</b>
-/play &lt;URL&gt; — Play a URL or reply to Telegram media
-/stream &lt;URL&gt; — Stream a direct/live URL
-/skip — Skip current media
-/replay — Restart current media
-/seek &lt;seconds&gt; — Seek forward/backward
-/pause — Pause playback
-/resume — Resume playback
-/volume &lt;1-200&gt; — Change volume
-/vcmute — Mute VC audio
-/vcunmute — Unmute VC audio
-/leave — Leave the video chat
+<b>Playback Commands</b>
+/play &lt;URL&gt; — Play a YouTube or supported media URL, or reply to a Telegram video/audio.
+/stream &lt;URL&gt; — Start a direct/live HTTP or HTTPS stream in the VC.
+/skip — Stop the current media and play the next item in the queue.
+/replay — Restart the currently playing media from the beginning.
+/seek &lt;seconds&gt; — Move forward or backward by the specified number of seconds.
+/pause — Pause the current stream.
+/resume — Resume paused playback.
+/volume &lt;1-200&gt; — Set playback volume from 1 to 200.
+/vcmute — Mute the bot's VC audio.
+/vcunmute — Unmute the bot's VC audio.
+/leave — Leave the current Telegram video chat.
 
-<b>Info</b>
-/player — Show current playback
-/playlist — Show current playback and queue
-/status — Show player status
-/help — Show this help
+<b>Information Commands</b>
+/player — Show the currently playing media and playback position.
+/playlist — Show the current media and all queued items.
+/status — Show the current player status.
+/help — Show this command list and usage information.
 """
 
 @Client.on_message(filters.command("start"))
