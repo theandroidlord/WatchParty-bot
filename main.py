@@ -2,6 +2,7 @@ import asyncio
 import os
 
 import yt_dlp
+from aiohttp import web
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pytgcalls import PyTgCalls
@@ -140,9 +141,6 @@ async def download_video(url, progress_message):
 
     try:
         filename, title = await asyncio.to_thread(download)
-
-        # Only stop the progress task after yt-dlp and any FFmpeg merge/post-processing
-        # have completely returned.
         state["done"] = True
         state["percent"] = 100
         await task
@@ -178,7 +176,6 @@ async def play_file(path):
     await calls.play(config.CHAT_ID, stream)
     current_file = path
 
-    # The new stream is active, so the previous local file is no longer needed.
     if old_file and old_file != path and os.path.isfile(old_file):
         try:
             os.remove(old_file)
@@ -197,6 +194,10 @@ async def cleanup_file():
             os.remove(path)
         except OSError:
             pass
+
+
+async def health(_):
+    return web.Response(text="OK")
 
 
 @bot.on_message(filters.command("join"))
@@ -307,6 +308,16 @@ async def start_client(client):
 async def main():
     os.makedirs(config.DOWNLOAD_DIR, exist_ok=True)
 
+    web_app = web.Application()
+    web_app.router.add_get("/", health)
+
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+
+    port = int(os.getenv("PORT", "8000"))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
     await start_client(bot)
     await start_client(assistant)
 
@@ -316,10 +327,19 @@ async def main():
     print(f"Assistant: @{me.username or me.id}", flush=True)
     print("WatchParty started.", flush=True)
     print("Commands: /join /play /pause /leave", flush=True)
+    print(f"Health server listening on 0.0.0.0:{port}", flush=True)
 
-    # Keep the same event loop alive. Pyrogram's legacy sync idle helper is
-    # intentionally avoided because this application already owns the loop.
-    await asyncio.Event().wait()
+    try:
+        await asyncio.Event().wait()
+    finally:
+        await runner.cleanup()
+        try:
+            await calls.leave_call(config.CHAT_ID)
+        except Exception:
+            pass
+        await cleanup_file()
+        await assistant.stop()
+        await bot.stop()
 
 
 if __name__ == "__main__":
