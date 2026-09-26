@@ -3,3 +3,4 @@ pyrogrammod>=2.1.2
 tgcrypto>=1.2.5
 yt-dlp
 python-dotenv
+aiohttp>=3.9.3
