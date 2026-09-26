@@ -17,8 +17,9 @@ from pyrogram import Client
 from config import Config
 bot = Client(
     "VCPlayer",
-    Config.API_ID,
-    Config.API_HASH,
+    api_id=Config.API_ID,
+    api_hash=Config.API_HASH,
     bot_token=Config.BOT_TOKEN,
-    plugins=dict(root="plugins")
+    plugins=dict(root="plugins"),
+    in_memory=True
 )

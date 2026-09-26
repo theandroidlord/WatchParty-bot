@@ -18,10 +18,12 @@ from config import Config
 from utils.logger import LOGGER
 
 USER = Client(
-    Config.SESSION,
-    Config.API_ID,
-    Config.API_HASH,
-    )
+    "UserSession",
+    api_id=Config.API_ID,
+    api_hash=Config.API_HASH,
+    session_string=Config.SESSION,
+    in_memory=True
+)
 group_call = PyTgCalls(USER, cache_duration=180)
 
 

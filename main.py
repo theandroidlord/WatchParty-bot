@@ -16,10 +16,17 @@ from utils import LOGGER, startup_check
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/health", "/health/"):
-            self.send_response(200)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(b"WatchParty bot is running")
+            if getattr(Config, "IS_READY", False):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"WatchParty bot is running")
+            else:
+                self.send_response(503)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.end_headers()
+                msg = Config.STARTUP_ERROR or "WatchParty bot is initializing or failed."
+                self.wfile.write(msg.encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
@@ -72,10 +79,17 @@ async def main():
         Config.USER_ID = (await USER.get_me()).id
 
         if not await startup_check():
+            LOGGER.error("Startup checks failed. Bot will stay idle to prevent rapid restart loops.")
+            await idle()
             return
 
+        Config.IS_READY = True
         LOGGER.info("%s started.", Config.BOT_USERNAME)
 
+        await idle()
+    except Exception as e:
+        LOGGER.exception("Startup failed with exception: %s", e)
+        # Stay idle to prevent rapid restart loops on Koyeb
         await idle()
     finally:
         try:
