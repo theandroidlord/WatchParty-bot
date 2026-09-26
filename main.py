@@ -51,8 +51,7 @@ async def start_bot_with_retry():
         except FloodWait as e:
             wait_seconds = int(getattr(e, "value", 0) or 0) + 5
             LOGGER.warning(
-                "Telegram FloodWait during bot authorization. "
-                "Waiting %s seconds before retrying.",
+                "Telegram FloodWait during bot authorization. Waiting %s seconds before retrying.",
                 wait_seconds,
             )
 
@@ -72,31 +71,30 @@ async def main():
         await start_bot_with_retry()
         Config.BOT_USERNAME = (await bot.get_me()).username
 
-        # PyTgCalls starts the user client; only query the user session after it is ready.
-        await group_call.start()
-        # Register PyTgCalls event handlers only after group_call has been created.
+        # Modern PyTgCalls starts the MTProto assistant internally and uses
+        # NTgCalls for the actual Telegram voice/video transport.
+        group_call.start()
+
+        # Register stream/chat update handlers after the call client exists.
         import userplugins.group_call  # noqa: F401
+
         Config.USER_ID = (await USER.get_me()).id
 
         if not await startup_check():
-            LOGGER.error("Startup checks failed. Bot will stay idle to prevent rapid restart loops.")
+            LOGGER.error("Startup checks failed. Bot will stay idle.")
             await idle()
             return
 
         Config.IS_READY = True
-        LOGGER.info("%s started.", Config.BOT_USERNAME)
+        LOGGER.info("%s started with modern video streaming.", Config.BOT_USERNAME)
 
         await idle()
+
     except Exception as e:
         LOGGER.exception("Startup failed with exception: %s", e)
-        # Stay idle to prevent rapid restart loops on Koyeb
         await idle()
-    finally:
-        try:
-            await group_call.stop()
-        except Exception:
-            LOGGER.exception("Failed to stop PyTgCalls")
 
+    finally:
         if bot.is_connected:
             try:
                 await bot.stop()
