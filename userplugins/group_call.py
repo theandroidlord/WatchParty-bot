@@ -1,5 +1,3 @@
-from pyrogram import Client
-from pytgcalls import PyTgCalls
 from pytgcalls.types import Update
 from pytgcalls.types.groups import JoinedVoiceChat, LeftVoiceChat
 from pytgcalls.types.stream import (
