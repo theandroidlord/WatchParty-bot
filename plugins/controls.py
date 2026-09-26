@@ -1,22 +1,21 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from config import Config
 from utils import admin_filter, chat_filter, skip, pause, resume, volume, mute, unmute, restart_playout, seek_file, queue_text
 
-@Client.on_message(filters.command(["skip", f"skip@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("skip") & chat_filter & admin_filter)
 async def skip_command(_, message: Message):
     await skip()
     await message.reply_text(queue_text(), disable_web_page_preview=True)
 
-@Client.on_message(filters.command(["pause", f"pause@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("pause") & chat_filter & admin_filter)
 async def pause_command(_, message: Message):
     await message.reply_text("✅ Paused." if await pause() else "❌ Unable to pause.")
 
-@Client.on_message(filters.command(["resume", f"resume@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("resume") & chat_filter & admin_filter)
 async def resume_command(_, message: Message):
     await message.reply_text("✅ Resumed." if await resume() else "❌ Unable to resume.")
 
-@Client.on_message(filters.command(["volume", f"volume@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("volume") & chat_filter & admin_filter)
 async def volume_command(_, message: Message):
     try:
         value = int(message.command[1])
@@ -28,23 +27,23 @@ async def volume_command(_, message: Message):
         return
     await message.reply_text(f"✅ Volume: {value}" if await volume(value) else "❌ Unable to change volume.")
 
-@Client.on_message(filters.command(["vcmute", f"vcmute@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("vcmute") & chat_filter & admin_filter)
 async def mute_command(_, message: Message):
     await message.reply_text("🔇 Muted." if await mute() else "❌ Unable to mute.")
 
-@Client.on_message(filters.command(["vcunmute", f"vcunmute@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("vcunmute") & chat_filter & admin_filter)
 async def unmute_command(_, message: Message):
     await message.reply_text("🔊 Unmuted." if await unmute() else "❌ Unable to unmute.")
 
-@Client.on_message(filters.command(["replay", f"replay@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("replay") & chat_filter & admin_filter)
 async def replay_command(_, message: Message):
     await message.reply_text("✅ Replaying." if await restart_playout() else "❌ Nothing is playing.")
 
-@Client.on_message(filters.command(["player", f"player@{Config.BOT_USERNAME}", "playlist", f"playlist@{Config.BOT_USERNAME}"]) & chat_filter)
+@Client.on_message(filters.command(["player", "playlist"]) & chat_filter)
 async def player_command(_, message: Message):
     await message.reply_text(queue_text(), disable_web_page_preview=True)
 
-@Client.on_message(filters.command(["seek", f"seek@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
+@Client.on_message(filters.command("seek") & chat_filter & admin_filter)
 async def seek_command(_, message: Message):
     try:
         offset = int(message.command[1])
