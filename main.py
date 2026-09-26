@@ -288,7 +288,6 @@ async def call_left(_, update):
     await cleanup_file()
 
 
-@calls.on_update(call_filters.stream_end())
 async def stream_ended(_, update: StreamEnded):
     await cleanup_file()
 
@@ -303,7 +302,11 @@ async def start_client(client):
 
 
 async def main():
+    global calls, download_lock
+
     os.makedirs(config.DOWNLOAD_DIR, exist_ok=True)
+    download_lock = asyncio.Lock()
+    calls = PyTgCalls(assistant)
 
     web_app = web.Application()
     web_app.router.add_get("/", health)
@@ -322,6 +325,13 @@ async def main():
         # Current PyTgCalls exposes start() as an async method.
         # It must be awaited before play(), pause(), or leave_call().
         await calls.start()
+
+        calls.on_update(
+            call_filters.chat_update(
+                ChatUpdate.Status.KICKED | ChatUpdate.Status.LEFT_GROUP
+            )
+        )(call_left)
+        calls.on_update(call_filters.stream_end())(stream_ended)
 
         me = await assistant.get_me()
         print(f"Assistant: @{me.username or me.id}", flush=True)
