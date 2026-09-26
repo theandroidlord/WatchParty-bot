@@ -12,7 +12,7 @@ from pytgcalls.types import AudioQuality, ChatUpdate, MediaStream, StreamEnded, 
 import config
 
 
-bot = Client(
+# Create the single asyncio loop used by Pyrogram and the whole application.\n# Pyrogram binds Client.loop during Client construction, so creating clients\n# before asyncio.run() would otherwise leave them attached to another loop.\nAPP_LOOP = asyncio.new_event_loop()\nasyncio.set_event_loop(APP_LOOP)\n\n\nbot = Client(
     "watchparty_bot",
     api_id=config.API_ID,
     api_hash=config.API_HASH,
@@ -355,5 +355,4 @@ async def main():
             await bot.stop()
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == "__main__":\n    try:\n        APP_LOOP.run_until_complete(main())\n    finally:\n        APP_LOOP.close()
