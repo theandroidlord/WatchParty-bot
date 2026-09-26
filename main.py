@@ -12,7 +12,14 @@ from pytgcalls.types import AudioQuality, ChatUpdate, MediaStream, StreamEnded, 
 import config
 
 
-# Create the single asyncio loop used by Pyrogram and the whole application.\n# Pyrogram binds Client.loop during Client construction, so creating clients\n# before asyncio.run() would otherwise leave them attached to another loop.\nAPP_LOOP = asyncio.new_event_loop()\nasyncio.set_event_loop(APP_LOOP)\n\n\nbot = Client(
+# Create the single asyncio loop used by Pyrogram and the whole application.
+# Pyrogram binds Client.loop during Client construction, so creating clients
+# before asyncio.run() would otherwise leave them attached to another loop.
+APP_LOOP = asyncio.new_event_loop()
+asyncio.set_event_loop(APP_LOOP)
+
+
+bot = Client(
     "watchparty_bot",
     api_id=config.API_ID,
     api_hash=config.API_HASH,
@@ -69,9 +76,13 @@ def progress_text(state):
         size = human_bytes(downloaded)
 
     return (
-        "⬇️ <b>Downloading video</b>\n\n"
-        f"<code>{bar(percent)}</code> {percent:3d}%\n"
-        f"📦 {size}\n"
+        "⬇️ <b>Downloading video</b>
+
+"
+        f"<code>{bar(percent)}</code> {percent:3d}%
+"
+        f"📦 {size}
+"
         f"⚡ {human_bytes(speed)}/s"
     )
 
@@ -148,7 +159,10 @@ async def download_video(url, progress_message):
             )
 
         await progress_message.edit_text(
-            f"✅ <b>Downloaded</b>\n<code>{title}</code>\n\n"
+            f"✅ <b>Downloaded</b>
+<code>{title}</code>
+
+"
             f"<code>{bar(100)}</code> 100%"
         )
         return filename, title
@@ -208,7 +222,9 @@ async def join_command(_, message):
     except Exception as e:
         await message.reply_text(
             "❌ Could not join the video chat. "
-            "Start a Telegram voice/video chat first.\n\n"
+            "Start a Telegram voice/video chat first.
+
+"
             f"<code>{e}</code>"
         )
 
@@ -230,7 +246,8 @@ async def play_command(_, message):
 
     async with download_lock:
         status = await message.reply_text(
-            "⬇️ <b>Preparing video...</b>\n"
+            "⬇️ <b>Preparing video...</b>
+"
             "<code>░░░░░░░░░░░░░░</code> 0%"
         )
 
@@ -239,16 +256,22 @@ async def play_command(_, message):
             await play_file(filename)
 
             await status.edit_text(
-                "▶️ <b>Now playing</b>\n"
-                f"<code>{title}</code>\n\n"
-                "🎥 720p video\n"
+                "▶️ <b>Now playing</b>
+"
+                f"<code>{title}</code>
+
+"
+                "🎥 720p video
+"
                 "<code>██████████████</code> 100%"
             )
 
         except Exception as e:
             await cleanup_file()
             await status.edit_text(
-                "❌ <b>Playback failed</b>\n\n"
+                "❌ <b>Playback failed</b>
+
+"
                 f"<code>{e}</code>"
             )
 
@@ -262,7 +285,8 @@ async def pause_command(_, message):
         await calls.pause(config.CHAT_ID)
         await message.reply_text("⏸️ Paused.")
     except Exception as e:
-        await message.reply_text(f"❌ Pause failed.\n<code>{e}</code>")
+        await message.reply_text(f"❌ Pause failed.
+<code>{e}</code>")
 
 
 @bot.on_message(filters.command("leave"))
@@ -279,11 +303,6 @@ async def leave_command(_, message):
     await message.reply_text("👋 Left the video chat.")
 
 
-@calls.on_update(
-    call_filters.chat_update(
-        ChatUpdate.Status.KICKED | ChatUpdate.Status.LEFT_GROUP
-    )
-)
 async def call_left(_, update):
     await cleanup_file()
 
@@ -355,4 +374,8 @@ async def main():
             await bot.stop()
 
 
-if __name__ == "__main__":\n    try:\n        APP_LOOP.run_until_complete(main())\n    finally:\n        APP_LOOP.close()
+if __name__ == "__main__":
+    try:
+        APP_LOOP.run_until_complete(main())
+    finally:
+        APP_LOOP.close()
