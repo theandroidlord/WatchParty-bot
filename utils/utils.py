@@ -13,7 +13,6 @@ from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped, AudioParam
 
 from bot import bot
 from config import Config
-from user import USER, group_call
 from .logger import LOGGER
 from .pyro_dl import Downloader
 
@@ -123,6 +122,7 @@ def resize_ratio(width, height):
 
 
 async def startup_check():
+    from user import USER
     required = {
         "API_ID": Config.API_ID, "API_HASH": Config.API_HASH,
         "BOT_TOKEN": Config.BOT_TOKEN, "SESSION_STRING": Config.SESSION,
@@ -148,6 +148,7 @@ async def startup_check():
 
 
 async def _ensure_call():
+    from user import USER
     try:
         result = await bot.send(GetFullChannel(channel=await bot.resolve_peer(Config.CHAT)))
         if result.full_chat.call is not None:
@@ -195,6 +196,7 @@ async def _resolve(item):
 
 
 async def _start(item, replace=False, seek=None):
+    from user import group_call
     link = await _resolve(item)
     if not link:
         return False, "Unable to resolve media URL."
@@ -278,6 +280,7 @@ async def skip():
 
 
 async def leave_call():
+    from user import group_call
     try:
         await group_call.leave_group_call(Config.CHAT)
     except Exception as e:
@@ -318,6 +321,7 @@ async def seek_file(offset):
 
 
 async def pause():
+    from user import group_call
     try:
         await group_call.pause_stream(Config.CHAT)
         Config.PAUSE = True
@@ -327,6 +331,7 @@ async def pause():
 
 
 async def resume():
+    from user import group_call
     try:
         await group_call.resume_stream(Config.CHAT)
         Config.PAUSE = False
@@ -336,6 +341,7 @@ async def resume():
 
 
 async def volume(value):
+    from user import group_call
     try:
         await group_call.change_volume_call(Config.CHAT, int(value))
         Config.VOLUME = int(value)
@@ -346,6 +352,7 @@ async def volume(value):
 
 
 async def mute():
+    from user import group_call
     try:
         await group_call.mute_stream(Config.CHAT)
         Config.MUTED = True
@@ -355,6 +362,7 @@ async def mute():
 
 
 async def unmute():
+    from user import group_call
     try:
         await group_call.unmute_stream(Config.CHAT)
         Config.MUTED = False
