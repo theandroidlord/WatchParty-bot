@@ -2,7 +2,7 @@ import asyncio, json, os, random, re, time
 from math import gcd
 
 import yt_dlp
-from pyrogram import filters
+from pyrogram import enums, filters
 from pyrogram.errors import PeerIdInvalid, ChannelInvalid
 from pyrogram.raw.functions.channels import GetFullChannel
 from pyrogram.raw.functions.phone import CreateGroupCall
@@ -22,7 +22,7 @@ dl = Downloader()
 async def get_admins(chat_id):
     ids = set(Config.ADMINS)
     try:
-        async for member in bot.get_chat_members(chat_id, filter="administrators"):
+        async for member in bot.get_chat_members(chat_id, filter=enums.ChatMembersFilter.ADMINISTRATORS):
             ids.add(member.user.id)
     except Exception as e:
         LOGGER.warning("Could not load chat admins: %s", e)
@@ -36,7 +36,7 @@ async def is_admin(_, client, message: Message):
 
 
 async def valid_chat(_, client, message: Message):
-    return message.chat.type == "private" or message.chat.id == Config.CHAT
+    return message.chat.type == enums.ChatType.PRIVATE or message.chat.id == Config.CHAT
 
 
 chat_filter = filters.create(valid_chat)
@@ -135,7 +135,7 @@ async def startup_check():
         return False
     try:
         member = await USER.get_chat_member(Config.CHAT, Config.USER_ID)
-        if getattr(member, "status", None) not in ("administrator", "creator"):
+        if getattr(member, "status", None) not in (enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER):
             LOGGER.warning("The user session is not a chat administrator.")
     except (ValueError, PeerIdInvalid, ChannelInvalid):
         Config.STARTUP_ERROR = "The user session is not a member of CHAT."
