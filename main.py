@@ -5,6 +5,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from pyrogram import idle
+from pyrogram.errors import FloodWait
+
 from bot import bot
 from config import Config
 from user import USER, group_call
@@ -34,33 +36,65 @@ def start_health_server():
     return server
 
 
+async def start_bot_with_retry():
+    while True:
+        try:
+            await bot.start()
+            return
+        except FloodWait as e:
+            wait_seconds = int(getattr(e, "value", 0) or 0) + 5
+            LOGGER.warning(
+                "Telegram FloodWait during bot authorization. "
+                "Waiting %s seconds before retrying.",
+                wait_seconds,
+            )
+
+            if bot.is_connected:
+                try:
+                    await bot.disconnect()
+                except Exception:
+                    LOGGER.exception("Failed to disconnect bot after FloodWait")
+
+            await asyncio.sleep(wait_seconds)
+
+
 async def main():
     health_server = start_health_server()
 
-    await bot.start()
-    Config.BOT_USERNAME = (await bot.get_me()).username
-
-    # PyTgCalls starts the user client; only query the user session after it is ready.
-    await group_call.start()
-    # Register PyTgCalls event handlers only after group_call has been created.
-    import userplugins.group_call  # noqa: F401
-    Config.USER_ID = (await USER.get_me()).id
-
-    if not await startup_check():
-        await bot.stop()
-        await USER.stop()
-        health_server.shutdown()
-        return
-
-    LOGGER.info("%s started.", Config.BOT_USERNAME)
-
     try:
+        await start_bot_with_retry()
+        Config.BOT_USERNAME = (await bot.get_me()).username
+
+        # PyTgCalls starts the user client; only query the user session after it is ready.
+        await group_call.start()
+        # Register PyTgCalls event handlers only after group_call has been created.
+        import userplugins.group_call  # noqa: F401
+        Config.USER_ID = (await USER.get_me()).id
+
+        if not await startup_check():
+            return
+
+        LOGGER.info("%s started.", Config.BOT_USERNAME)
+
         await idle()
     finally:
-        await group_call.stop()
-        await bot.stop()
+        try:
+            await group_call.stop()
+        except Exception:
+            LOGGER.exception("Failed to stop PyTgCalls")
+
+        if bot.is_connected:
+            try:
+                await bot.stop()
+            except Exception:
+                LOGGER.exception("Failed to stop bot")
+
         if USER.is_connected:
-            await USER.stop()
+            try:
+                await USER.stop()
+            except Exception:
+                LOGGER.exception("Failed to stop user session")
+
         health_server.shutdown()
 
 
