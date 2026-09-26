@@ -28,9 +28,6 @@ assistant = Client(
     in_memory=True,
 )
 
-# PyTgCalls stores the current event loop when it is constructed.
-# Keep this same loop for the complete application lifetime.
-app_loop = asyncio.get_event_loop()
 calls = PyTgCalls(assistant)
 
 current_file = None
@@ -318,19 +315,22 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-    await start_client(bot)
-    await start_client(assistant)
-
-    calls.start()
-
-    me = await assistant.get_me()
-    print(f"Assistant: @{me.username or me.id}", flush=True)
-    print("WatchParty started.", flush=True)
-    print("Commands: /join /play /pause /leave", flush=True)
-    print(f"Health server listening on 0.0.0.0:{port}", flush=True)
-
     try:
+        await start_client(bot)
+        await start_client(assistant)
+
+        # Current PyTgCalls exposes start() as an async method.
+        # It must be awaited before play(), pause(), or leave_call().
+        await calls.start()
+
+        me = await assistant.get_me()
+        print(f"Assistant: @{me.username or me.id}", flush=True)
+        print("WatchParty started.", flush=True)
+        print("Commands: /join /play /pause /leave", flush=True)
+        print(f"Health server listening on 0.0.0.0:{port}", flush=True)
+
         await asyncio.Event().wait()
+
     finally:
         await runner.cleanup()
         try:
@@ -338,9 +338,12 @@ async def main():
         except Exception:
             pass
         await cleanup_file()
-        await assistant.stop()
-        await bot.stop()
+
+        if assistant.is_connected:
+            await assistant.stop()
+        if bot.is_connected:
+            await bot.stop()
 
 
 if __name__ == "__main__":
-    app_loop.run_until_complete(main())
+    asyncio.run(main())
