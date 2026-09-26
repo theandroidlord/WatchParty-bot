@@ -1,5 +1,6 @@
+# Keep the legacy PyTgCalls API used by this streaming-only bot.
 pyrogram==1.3.6
-py-tgcalls==0.8.2
+py-tgcalls==0.8.6
 tgcrypto
 yt-dlp
 python-dotenv
