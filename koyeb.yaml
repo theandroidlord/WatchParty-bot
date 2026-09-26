@@ -1,20 +1,14 @@
-# Koyeb deployment configuration
-# Koyeb Web Services provide PORT automatically; the bot health server
-# listens on that value and defaults to 8000 for local/Docker use.
-
-services:
-  - name: watchparty-bot
-    type: web
-    instance_type: nano
-    min_scale: 1
-    max_scale: 1
-    ports:
-      - port: 8000
-        protocol: http
-    routes:
-      - path: /
-        port: 8000
-    health_checks:
-      - port: 8000
-        protocol: http
-        path: /health
+# Reference configuration for a Koyeb Web Service.
+#
+# Koyeb's GitHub deployment settings are configured on the Service itself;
+# this file is kept as a reference for the intended port, route, health
+# check, and scaling values. Select the Docker builder in the Koyeb Service.
+#
+# Intended values:
+#   builder: docker
+#   dockerfile: Dockerfile
+#   service type: web
+#   port: 8000/http
+#   route: / -> 8000
+#   health check: /health on 8000
+#   min/max scale: 1/1
