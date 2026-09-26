@@ -1,15 +1,12 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from config import Config
-from utils import (
-    admin_filter, chat_filter, skip, pause, resume, volume, mute, unmute,
-    restart_playout, seek_file, player_text, queue_text
-)
+from utils import admin_filter, chat_filter, skip, pause, resume, volume, mute, unmute, restart_playout, seek_file, queue_text
 
 @Client.on_message(filters.command(["skip", f"skip@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
 async def skip_command(_, message: Message):
     await skip()
-    await message.reply_text(queue_text())
+    await message.reply_text(queue_text(), disable_web_page_preview=True)
 
 @Client.on_message(filters.command(["pause", f"pause@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
 async def pause_command(_, message: Message):
@@ -29,7 +26,7 @@ async def volume_command(_, message: Message):
     if not 1 <= value <= 200:
         await message.reply_text("Volume must be between 1 and 200.")
         return
-    await message.reply_text("✅ Volume: %d" % value if await volume(value) else "❌ Unable to change volume.")
+    await message.reply_text(f"✅ Volume: {value}" if await volume(value) else "❌ Unable to change volume.")
 
 @Client.on_message(filters.command(["vcmute", f"vcmute@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
 async def mute_command(_, message: Message):
