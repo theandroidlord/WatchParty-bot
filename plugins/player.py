@@ -28,7 +28,7 @@ async def stream_command(_, message: Message):
     if not resolved:
         await message.reply_text("Unable to resolve the stream URL.")
         return
-    ok, error = await stream_from_link(link, title="Live Stream")
+    ok, error = await stream_from_link(resolved, title="Live Stream")
     await message.reply_text("✅ Stream started." if ok else f"❌ {error or 'Unable to start stream.'}")
 
 @Client.on_message(filters.command(["leave", f"leave@{Config.BOT_USERNAME}"]) & chat_filter & admin_filter)
