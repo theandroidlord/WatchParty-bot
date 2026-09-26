@@ -286,11 +286,6 @@ async def leave_command(_, message):
     await message.reply_text("👋 Left the video chat.")
 
 
-@calls.on_update(
-    call_filters.chat_update(
-        ChatUpdate.Status.KICKED | ChatUpdate.Status.LEFT_GROUP
-    )
-)
 async def call_left(_, update):
     await cleanup_file()
 
