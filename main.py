@@ -324,7 +324,6 @@ async def main():
 
     await idle()
 
-    await calls.stop()
     await assistant.stop()
     await bot.stop()
 
