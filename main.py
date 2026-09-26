@@ -39,6 +39,9 @@ async def main():
 
     await bot.start()
     Config.BOT_USERNAME = (await bot.get_me()).username
+
+    # PyTgCalls starts the user client; only query the user session after it is ready.
+    await group_call.start()
     Config.USER_ID = (await USER.get_me()).id
 
     if not await startup_check():
@@ -47,7 +50,6 @@ async def main():
         health_server.shutdown()
         return
 
-    await group_call.start()
     LOGGER.info("%s started.", Config.BOT_USERNAME)
 
     try:
