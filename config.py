@@ -28,3 +28,4 @@ class Config:
     BOT_USERNAME = None
     USER_ID = None
     STARTUP_ERROR = None
+    IS_READY = False
