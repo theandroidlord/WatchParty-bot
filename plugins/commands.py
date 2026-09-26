@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from config import Config
-from utils import chat_filter, admin_filter, queue_text
+from utils import chat_filter, queue_text
 
 HELP = """<b>WatchParty streaming bot</b>
 
