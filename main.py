@@ -28,10 +28,10 @@ assistant = Client(
     in_memory=True,
 )
 
-calls = PyTgCalls(assistant)
+calls = None
 
 current_file = None
-download_lock = asyncio.Lock()
+download_lock = None
 
 
 def allowed(message):
