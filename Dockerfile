@@ -12,4 +12,7 @@ RUN pip install --no-cache-dir -U pip \
 
 COPY . .
 
+# Koyeb exposes the lowest exposed port as PORT when not set manually.
+EXPOSE 8000
+
 CMD ["python3", "main.py"]
